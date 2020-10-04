@@ -13,5 +13,15 @@ UCLASS()
 class MULTITPP_API UMultiTPPGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
-	
+
+	virtual void Init() override;
+
+public:
+	UMultiTPPGameInstance(const FObjectInitializer& ObjectInitializer);
+
+	UFUNCTION(Exec)
+	void Host();
+
+	UFUNCTION(Exec)
+	void Join(const FString& Address);
 };
