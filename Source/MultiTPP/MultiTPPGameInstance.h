@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "MenuSystem/MenuInterface.h"
 #include "MultiTPPGameInstance.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class MULTITPP_API UMultiTPPGameInstance : public UGameInstance
+class MULTITPP_API UMultiTPPGameInstance : public UGameInstance, public IMenuInterface
 {
 	GENERATED_BODY()
 
@@ -19,9 +20,15 @@ class MULTITPP_API UMultiTPPGameInstance : public UGameInstance
 public:
 	UMultiTPPGameInstance(const FObjectInitializer& ObjectInitializer);
 
-	UFUNCTION(Exec)
-	void Host();
+	UFUNCTION(BlueprintCallable)
+	void LoadMenu();
+
+	UFUNCTION()
+	void Host() override;
 
 	UFUNCTION(Exec)
-	void Join(const FString& Address);
+	void Join(const FString& Address) override;
+
+private:
+	class TSubclassOf<UUserWidget> MenuClass;
 };

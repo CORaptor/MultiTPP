@@ -8,6 +8,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "MenuSystem/InGameMenu.h"
+#include "MenuSystem/MainMenu.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMultiTPPCharacter
@@ -45,6 +47,11 @@ AMultiTPPCharacter::AMultiTPPCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+
+	// Set in-game menu class
+	ConstructorHelpers::FClassFinder<UUserWidget> MenuBPClass(TEXT("/Game/MenuSystem/WBP_InGameMenu"));
+	if (!ensure(MenuBPClass.Class != nullptr)) return;
+	InGameMenuClass = MenuBPClass.Class;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -74,6 +81,9 @@ void AMultiTPPCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AMultiTPPCharacter::OnResetVR);
+
+	// Bind pause
+	PlayerInputComponent->BindAction("Pause", IE_Pressed, this, &AMultiTPPCharacter::Pause);
 }
 
 
@@ -90,6 +100,17 @@ void AMultiTPPCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Loc
 void AMultiTPPCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
 		StopJumping();
+}
+
+void AMultiTPPCharacter::Pause()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Cyan, TEXT("Opening in-game menu"));
+
+	UGameInstance* GameInstance = GetGameInstance();
+	if (!ensure (GameInstance != nullptr)) return;
+	UInGameMenu* InGameMenu = CreateWidget<UInGameMenu>(GameInstance, InGameMenuClass);
+	if (!ensure(InGameMenu != nullptr)) return;
+	InGameMenu->Setup();
 }
 
 void AMultiTPPCharacter::TurnAtRate(float Rate)

@@ -2,10 +2,37 @@
 
 
 #include "MultiTPPGameInstance.h"
+#include "Blueprint/UserWidget.h"
+#include "UObject/ConstructorHelpers.h"
+#include "MenuSystem/MainMenu.h"
+#include "PlatformTrigger.h"
 
 UMultiTPPGameInstance::UMultiTPPGameInstance(const FObjectInitializer& ObjectInitializer)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Game Instance Constructor"));
+	ConstructorHelpers::FClassFinder<APlatformTrigger> PlatformTriggerBPClass(TEXT("/Game/Blueprints/BP_PlatformTrigger"));
+	if (!ensure(PlatformTriggerBPClass.Class != nullptr)) return;
+
+	ConstructorHelpers::FClassFinder<UUserWidget> MenuBPClass(TEXT("/Game/MenuSystem/WBP_MainMenu"));
+	if (!ensure(MenuBPClass.Class != nullptr)) return;
+	MenuClass = MenuBPClass.Class;
+
+	UE_LOG(LogTemp, Warning, TEXT("Found class %s"), *PlatformTriggerBPClass.Class->GetName());
+}
+
+void UMultiTPPGameInstance::LoadMenu()
+{
+	if (!ensure(MenuClass != nullptr)) return;
+
+	UMainMenu* Menu = CreateWidget<UMainMenu>(this, MenuClass);
+	if (!ensure(Menu != nullptr)) return;
+
+	Menu->Setup();
+	Menu->SetMenuInterface(this);
+}
+
+void UMultiTPPGameInstance::Init()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Found class %s"), *MenuClass->GetName());
 }
 
 void UMultiTPPGameInstance::Host()
@@ -30,7 +57,3 @@ void UMultiTPPGameInstance::Join(const FString& Address)
 	PlayerController->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
 }
 
-void UMultiTPPGameInstance::Init()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Game Instance Init"));
-}
