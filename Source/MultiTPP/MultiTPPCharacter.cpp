@@ -9,7 +9,7 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "MenuSystem/InGameMenu.h"
-#include "MenuSystem/MainMenu.h"
+#include "MenuSystem/MenuInterface.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMultiTPPCharacter
@@ -106,11 +106,17 @@ void AMultiTPPCharacter::Pause()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Cyan, TEXT("Opening in-game menu"));
 
+	// Open in-game menu
 	UGameInstance* GameInstance = GetGameInstance();
 	if (!ensure (GameInstance != nullptr)) return;
 	UInGameMenu* InGameMenu = CreateWidget<UInGameMenu>(GameInstance, InGameMenuClass);
 	if (!ensure(InGameMenu != nullptr)) return;
 	InGameMenu->Setup();
+
+	// Set game instance as menu interface
+	IMenuInterface* MenuInterface = Cast<IMenuInterface>(GameInstance);
+	if (!ensure(MenuInterface != nullptr)) return;
+	InGameMenu->SetMenuInterface(MenuInterface);
 }
 
 void AMultiTPPCharacter::TurnAtRate(float Rate)

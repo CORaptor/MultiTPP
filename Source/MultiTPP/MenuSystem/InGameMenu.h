@@ -11,16 +11,21 @@
  * 
  */
 UCLASS()
-class MULTITPP_API UInGameMenu : public UUserWidget
+class MULTITPP_API UInGameMenu : public UMenuBase
 {
 	GENERATED_BODY()
 
 public:
 	UPROPERTY(meta = (BindWidget))
-		class UButton* MainMenuButton;
+	class UButton* MainMenuButton;
 
 	UPROPERTY(meta = (BindWidget))
-		class UButton* CancelButton;
+	class UButton* CancelButton;
 
-	void Setup();
+protected:
+	virtual bool Initialize() override;
+
+private:
+	UFUNCTION()
+	void ReturnToMainMenu();
 };

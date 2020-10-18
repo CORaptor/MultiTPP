@@ -2,22 +2,28 @@
 
 
 #include "InGameMenu.h"
+#include "Components/Button.h"
 
-void UInGameMenu::Setup()
+bool UInGameMenu::Initialize()
 {
-	bIsFocusable = true;
-	AddToViewport();
+	bool Success = Super::Initialize();
+	if (!Success) return false;
 
-	FInputModeUIOnly InputMode;
-	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-	InputMode.SetWidgetToFocus(TakeWidget());
+	// Bind Return-to-Main-Menu Button
+	if (!ensure(MainMenuButton != nullptr)) return false;
+	MainMenuButton->OnClicked.AddDynamic(this, &UInGameMenu::ReturnToMainMenu);
 
-	UWorld* World = GetWorld();
-	if (!ensure(World != nullptr)) return;
+	// Bind Cancel Button
+	if (!ensure(CancelButton != nullptr)) return false;
+	CancelButton->OnClicked.AddDynamic(this, &UMenuBase::Teardown);
 
-	APlayerController* PlayerController = World->GetFirstPlayerController();
-	if (!ensure(PlayerController != nullptr)) return;
+	return true;
+}
 
-	PlayerController->SetInputMode(InputMode);
-	PlayerController->bShowMouseCursor = true;
+void UInGameMenu::ReturnToMainMenu()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Magenta, TEXT("Return to Main Menu"));
+
+	if (GetMenuInterface() == nullptr) return;
+	GetMenuInterface()->ReturnToMenu();
 }

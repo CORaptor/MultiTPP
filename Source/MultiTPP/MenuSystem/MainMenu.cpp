@@ -3,44 +3,48 @@
 
 #include "MainMenu.h"
 #include "Components/Button.h"
-#include "Components/EditableText.h"
+#include "Components/PanelWidget.h"
+#include "Components/TextBlock.h"
 #include "Components/WidgetSwitcher.h"
+#include "UObject/ConstructorHelpers.h"
+#include "ServerListEntry.h"
 
-void UMainMenu::Setup()
+UMainMenu::UMainMenu(const FObjectInitializer& ObjectInitializer): Super(ObjectInitializer)
 {
-	bIsFocusable = true;
-	AddToViewport();
-
-	FInputModeUIOnly InputMode;
-	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-	InputMode.SetWidgetToFocus(TakeWidget());
-
-	UWorld* World = GetWorld();
-	if (!ensure(World != nullptr)) return;
-
-	APlayerController* PlayerController = World->GetFirstPlayerController();
-	if (!ensure(PlayerController != nullptr)) return;
-
-	PlayerController->SetInputMode(InputMode);
-	PlayerController->bShowMouseCursor = true;
+	ConstructorHelpers::FClassFinder<UServerListEntry> ServerListEntryBPClass(TEXT("/Game/MenuSystem/WBP_ServerListEntry"));
+	if (!ensure(ServerListEntryBPClass.Class != nullptr)) return;
+	ServerListEntryClass = ServerListEntryBPClass.Class;
 }
 
-void UMainMenu::OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld)
+void UMainMenu::SetServerList(TArray<FString> ServerNames)
 {
-	Super::OnLevelRemovedFromWorld(InLevel, InWorld);
+	if (ServerList == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("No server list widget detected."));
+		return;
+	}
+	
+	ServerList->ClearChildren();
+	
+	if (ServerListEntryClass != nullptr && ServerList != nullptr)
+	{
+		uint32 i = 0;
+		
+		for (const FString& ServerName : ServerNames)
+		{
+			UServerListEntry* ServerListEntry = CreateWidget<UServerListEntry>(this, ServerListEntryClass);
+			ServerListEntry->ServerNameField->SetText(FText::FromString(ServerName));
+			ServerListEntry->Setup(this, i);
+			++i;
+			
+			ServerList->AddChild(ServerListEntry);
+		}
+	}
+}
 
-	FInputModeGameOnly InputMode;
-
-	UWorld* World = GetWorld();
-	if (!ensure(World != nullptr)) return;
-
-	APlayerController* PlayerController = World->GetFirstPlayerController();
-	if (!ensure(PlayerController != nullptr)) return;
-
-	PlayerController->SetInputMode(InputMode);
-	PlayerController->bShowMouseCursor = false;
-
-	RemoveFromParent();
+void UMainMenu::SelectIndex(uint32 Index)
+{
+	SelectedIndex = Index;
 }
 
 bool UMainMenu::Initialize()
@@ -48,11 +52,14 @@ bool UMainMenu::Initialize()
 	bool Success = Super::Initialize();
 	if (!Success) return false;
 
-	if (!ensure(Host != nullptr)) return false;
-	Host->OnClicked.AddDynamic(this, &UMainMenu::HostServer);
+	if (!ensure(HostButton != nullptr)) return false;
+	HostButton->OnClicked.AddDynamic(this, &UMainMenu::HostServer);
 
-	if (!ensure(Join != nullptr)) return false;
-	Join->OnClicked.AddDynamic(this, &UMainMenu::OpenJoinMenu);
+	if (!ensure(JoinButton != nullptr)) return false;
+	JoinButton->OnClicked.AddDynamic(this, &UMainMenu::OpenJoinMenu);
+
+	if (!ensure(JoinButton != nullptr)) return false;
+	QuitButton->OnClicked.AddDynamic(this, &UMainMenu::QuitGame);
 
 	if (!ensure(BackToMenuButton != nullptr)) return false;
 	BackToMenuButton->OnClicked.AddDynamic(this, &UMainMenu::ReturnToMenu);
@@ -65,9 +72,9 @@ bool UMainMenu::Initialize()
 
 void UMainMenu::HostServer()
 {
-	if (MenuInterface != nullptr)
+	if (GetMenuInterface() != nullptr)
 	{
-		MenuInterface->Host();
+		GetMenuInterface()->Host();
 	}
 }
 
@@ -76,6 +83,9 @@ void UMainMenu::OpenJoinMenu()
 	if (!ensure(MenuSwitcher != nullptr)) return;
 	if (!ensure(JoinMenu != nullptr)) return;
 	MenuSwitcher->SetActiveWidget(JoinMenu);
+
+	SetServerList({ "...searching for servers..." });
+	GetMenuInterface()->RefreshServerList();
 }
 
 void UMainMenu::ReturnToMenu()
@@ -87,17 +97,23 @@ void UMainMenu::ReturnToMenu()
 
 void UMainMenu::JoinServer()
 {
-	if (MenuInterface != nullptr)
+	if (SelectedIndex.IsSet() && GetMenuInterface() != nullptr)
 	{
-		FString Address = IPAddressField->GetText().ToString();
-		//if (Address != null)
-		//{
-			MenuInterface->Join(Address);
-		//}
+		UE_LOG(LogTemp, Warning, TEXT("Selected index %d."), SelectedIndex.GetValue());
+		GetMenuInterface()->Join(SelectedIndex.GetValue());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Selected index not set."));
 	}
 }
 
-void UMainMenu::SetMenuInterface(IMenuInterface* NewMenuInterface)
+void UMainMenu::QuitGame()
 {
-	this->MenuInterface = NewMenuInterface;
+	UGameInstance* GameInstance = GetGameInstance();
+	if (!ensure(GameInstance != nullptr)) return;
+
+	APlayerController* PlayerController = GameInstance->GetFirstLocalPlayerController();
+	if (!ensure(PlayerController != nullptr)) return;
+	PlayerController->ConsoleCommand(TEXT("quit"), true);
 }

@@ -13,7 +13,10 @@ AMovingPlatform::AMovingPlatform()
 
 	PlatformSpeed = 10.0f;
 
-	bMovingBack = false;
+	if (HasAuthority())
+	{
+		bMovingBack = false;
+	}
 }
 
 void AMovingPlatform::BeginPlay()
@@ -24,16 +27,18 @@ void AMovingPlatform::BeginPlay()
 	{
 		SetReplicates(true);
 		SetReplicateMovement(true);
+
+		GlobalStartLocation = GetActorLocation();
+		GlobalTargetLocation = GetTransform().TransformPosition(TargetLocation);
 	}
-
-	GlobalStartLocation = GetActorLocation();
-	GlobalTargetLocation = GetTransform().TransformPosition(TargetLocation);
-
+	
 	ActiveTriggers > 0 ? bIsActive = true : bIsActive = false;
 }
 
 void AMovingPlatform::Tick(float DeltaSeconds)
 {
+	Super::Tick(DeltaSeconds);
+	
 	if (HasAuthority() && bIsActive)
 	{
 		FVector Location = GetActorLocation();

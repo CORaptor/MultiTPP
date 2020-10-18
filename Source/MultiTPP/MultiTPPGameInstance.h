@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "MenuSystem/MenuInterface.h"
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "MultiTPPGameInstance.generated.h"
 
 /**
@@ -23,12 +25,30 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void LoadMenu();
 
-	UFUNCTION()
+	UFUNCTION(Exec)
 	void Host() override;
 
 	UFUNCTION(Exec)
-	void Join(const FString& Address) override;
+	void Join(uint32 Index) override;
+
+	UFUNCTION(Exec)
+	void ReturnToMenu() override;
+
+	void RefreshServerList() override;
 
 private:
 	class TSubclassOf<UUserWidget> MenuClass;
+
+	class UMainMenu* Menu;
+
+	void HostSession(FName SessionName, bool Success);
+
+	void CreateNewSession(FName SessionName, bool Success);
+
+	IOnlineSessionPtr SessionInterface;
+	TSharedPtr<class FOnlineSessionSearch> SessionSearch;
+
+	void SessionsFound(bool Success);
+
+	void JoinSession(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 };

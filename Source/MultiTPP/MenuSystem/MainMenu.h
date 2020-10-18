@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "MenuBase.h"
 #include "MenuInterface.h"
 #include "MainMenu.generated.h"
 
@@ -11,26 +12,29 @@
  * 
  */
 UCLASS()
-class MULTITPP_API UMainMenu : public UUserWidget
+class MULTITPP_API UMainMenu : public UMenuBase
 {
 	GENERATED_BODY()
 
 public:
-	void SetMenuInterface(IMenuInterface* NewMenuInterface);
+	UMainMenu(const FObjectInitializer& ObjectInitializer);
 
-	void Setup();
+	void SetServerList(TArray <FString> ServerNames);
 
-	void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld) override;
+	void SelectIndex(uint32 Index);
 
 protected:
 	virtual bool Initialize() override;
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	class UButton* Host;
+	class UButton* HostButton;
 
 	UPROPERTY(meta = (BindWidget))
-	class UButton* Join;
+	class UButton* JoinButton;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* QuitButton;
 
 	UPROPERTY(meta = (BindWidget))
 	class UWidgetSwitcher* MenuSwitcher;
@@ -48,7 +52,9 @@ private:
 	class UButton* BackToMenuButton;
 
 	UPROPERTY(meta = (BindWidget))
-	class UEditableText* IPAddressField;
+	class UPanelWidget* ServerList;
+
+	TSubclassOf<class UServerListEntry> ServerListEntryClass;
 
 	UFUNCTION()
 	void HostServer();
@@ -61,6 +67,9 @@ private:
 
 	UFUNCTION()
 	void JoinServer();
+	
+	UFUNCTION()
+	void QuitGame();
 
-	IMenuInterface* MenuInterface;
+	TOptional<uint32> SelectedIndex;
 };

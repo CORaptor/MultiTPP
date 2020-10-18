@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "MenuInterface.h"
 #include "MenuBase.generated.h"
 
 /**
@@ -16,4 +17,16 @@ class MULTITPP_API UMenuBase : public UUserWidget
 	
 public:
 	void Setup();
+
+	UFUNCTION()
+	void Teardown();
+
+	void OnLevelRemovedFromWorld(ULevel* InLevel, UWorld* InWorld) override;
+	
+	void SetMenuInterface(IMenuInterface* NewMenuInterface);
+
+	IMenuInterface* GetMenuInterface() const;
+
+private:
+	IMenuInterface* MenuInterface;
 };
